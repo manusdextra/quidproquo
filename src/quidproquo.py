@@ -10,7 +10,7 @@ import pathlib
 
 class Config:
     """
-    Gather important variables such as source file locations
+    Collection of important variables such as source file locations
     """
 
     inputs = pathlib.Path(__file__).parents[1] / "inputs"
