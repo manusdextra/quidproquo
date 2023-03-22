@@ -31,15 +31,16 @@ class Config:
         )
 
 
-def source(sourcefile: pandas.ExcelFile) -> list[pandas.DataFrame]:
+def source(config: Config) -> pandas.DataFrame:
     """
     Load files and analyse them
     """
-
-    return [
+    sourcefile = config.files[0]
+    sheets = [
         pandas.read_excel(sourcefile, sheet_name=sheet_name, engine="openpyxl")
         for sheet_name in sourcefile.sheet_names
     ]
+    return pandas.concat(sheets)
 
 
 def list_pos(
@@ -62,12 +63,8 @@ def filter_by_pos(
     return df[(df["Part of speech"] == pos)][["Word", "Definition"]]
 
 
-def concat(sheets: list[pandas.DataFrame]) -> pandas.DataFrame:
-    return pandas.concat(sheets)
-
-
 if __name__ == "__main__":
     config = Config()
-    complete_collection = concat(source(config.files[0]))
+    complete_collection = source(config)
 
     parts_of_speech = list_pos(complete_collection)
