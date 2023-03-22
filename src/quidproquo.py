@@ -14,7 +14,7 @@ class Config:
     """
 
     root = pathlib.Path(__file__).parents[1]
-    template = root / "template" / "template.xlsx"
+    template = root / "template.xlsx"
     inputs = root / "inputs"
     output = root / "output"
 
@@ -23,12 +23,19 @@ class Config:
         return [pandas.ExcelFile(file) for file in self.inputs.iterdir()]
 
 
-def main():
+def source(sourcefile: pandas.ExcelFile) -> list[pandas.DataFrame]:
     """
     Load files and analyse them
     """
+
+    return [
+        pandas.read_excel(sourcefile, sheet_name=sheet_name)
+        for sheet_name in sourcefile.sheet_names
+    ]
+
+
+if __name__ == "__main__":
     config = Config()
 
-    sourcefile = config.files[0]
-    dataframe = pandas.read_excel(sourcefile)
-    return dataframe
+    sheets = source(config.files[0])
+    complete_collection = pandas.concat(sheets)
