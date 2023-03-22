@@ -42,8 +42,32 @@ def source(sourcefile: pandas.ExcelFile) -> list[pandas.DataFrame]:
     ]
 
 
+def list_pos(
+    df: pandas.DataFrame,
+) -> list[str]:
+    """
+    Make a list of parts of speech included in the set, sorted by Frequency,
+    optionally with duplicates ("noun, verb" and "verb, noun" for example) removed.
+    """
+    return list(df["Part of speech"].value_counts().index)
+
+
+def filter_by_pos(
+    df: pandas.DataFrame,
+    pos: str,
+) -> pandas.DataFrame:
+    """
+    Return a new DataFrame containing only the specified parts of speech
+    """
+    return df[(df["Part of speech"] == pos)][["Word", "Definition"]]
+
+
+def concat(sheets: list[pandas.DataFrame]) -> pandas.DataFrame:
+    return pandas.concat(sheets)
+
+
 if __name__ == "__main__":
     config = Config()
+    complete_collection = concat(source(config.files[0]))
 
-    sheets = source(config.files[0])
-    complete_collection = pandas.concat(sheets)
+    parts_of_speech = list_pos(complete_collection)
