@@ -29,7 +29,7 @@ def source(sourcefile: pandas.ExcelFile) -> list[pandas.DataFrame]:
     """
 
     return [
-        pandas.read_excel(sourcefile, sheet_name=sheet_name)
+        pandas.read_excel(sourcefile, sheet_name=sheet_name, engine="openpyxl")
         for sheet_name in sourcefile.sheet_names
     ]
 
