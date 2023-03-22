@@ -14,13 +14,21 @@ class Config:
     """
 
     root = pathlib.Path(__file__).parents[1]
-    template = root / "template.xlsx"
     inputs = root / "inputs"
     output = root / "output"
 
     @property
     def files(self) -> list:
         return [pandas.ExcelFile(file) for file in self.inputs.iterdir()]
+
+    @property
+    def template(self) -> pandas.DataFrame:
+        return pandas.read_excel(
+            self.root / "template.xlsx",
+            engine="openpyxl",
+            skiprows=7,
+            index_col=0,
+        )
 
 
 def source(sourcefile: pandas.ExcelFile) -> list[pandas.DataFrame]:
