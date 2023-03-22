@@ -13,7 +13,10 @@ class Config:
     Collection of important variables such as source file locations
     """
 
-    inputs = pathlib.Path(__file__).parents[1] / "inputs"
+    root = pathlib.Path(__file__).parents[1]
+    template = root / "template" / "template.xlsx"
+    inputs = root / "inputs"
+    output = root / "output"
 
     @property
     def files(self) -> list:
