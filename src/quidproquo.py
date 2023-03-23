@@ -59,11 +59,34 @@ def list_pos(
 def filter_by_pos(
     dframe: pandas.DataFrame,
     pos: str,
-) -> pandas.DataFrame:
+) -> list[tuple[str, str, str]]:
     """
-    Return a new DataFrame containing only the specified parts of speech
+    Return a new DataFrame containing only the specified parts of speech.
+    If a word has several meanings, this will split them into separate definitions,
+    one for each part of speech.
     """
-    return dframe[(dframe["Part of speech"] == pos)][["Word", "Definition"]]
+    whole = dframe[(dframe["Part of speech"] == pos)][["Word", "Definition"]]
+    separator = ", "
+    if separator not in pos:
+        return whole
+    pos1, pos2 = pos.split(separator)
+    tuples = []
+    for tup in whole.itertuples(index=False):
+        if "\n" in tup[1]:
+            def1, def2 = tup[1].split("\n")
+            # cut leading numbers
+            def1 = def1[3:]
+            def2 = def2[3:]
+        else:
+            def1 = tup[1]
+            def2 = tup[1]
+        tuples.append(
+            (tup[0], pos1, def1),
+        )
+        tuples.append(
+            (tup[0], pos2, def2),
+        )
+    return tuples
 
 
 if __name__ == "__main__":
