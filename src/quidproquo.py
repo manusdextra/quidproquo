@@ -4,8 +4,9 @@ Quid Pro Quo
 Take an Excel spreadsheet full of vocabulary and turn it into a Kahoot Quiz
 """
 
-import pandas
 import pathlib
+
+import pandas
 
 
 class Config:
@@ -19,10 +20,12 @@ class Config:
 
     @property
     def files(self) -> list:
+        """load all input files into memory"""
         return [pandas.ExcelFile(file) for file in self.inputs.iterdir()]
 
     @property
     def template(self) -> pandas.DataFrame:
+        """provide kahoot template and select appropriate regions"""
         return pandas.read_excel(
             self.root / "template.xlsx",
             engine="openpyxl",
@@ -31,7 +34,7 @@ class Config:
         )
 
 
-def source(config: Config) -> pandas.DataFrame:
+def source_files(config: Config) -> pandas.DataFrame:
     """
     Load files and analyse them
     """
@@ -44,27 +47,27 @@ def source(config: Config) -> pandas.DataFrame:
 
 
 def list_pos(
-    df: pandas.DataFrame,
+    dframe: pandas.DataFrame,
 ) -> list[str]:
     """
     Make a list of parts of speech included in the set, sorted by Frequency,
     optionally with duplicates ("noun, verb" and "verb, noun" for example) removed.
     """
-    return list(df["Part of speech"].value_counts().index)
+    return list(dframe["Part of speech"].value_counts().index)
 
 
 def filter_by_pos(
-    df: pandas.DataFrame,
+    dframe: pandas.DataFrame,
     pos: str,
 ) -> pandas.DataFrame:
     """
     Return a new DataFrame containing only the specified parts of speech
     """
-    return df[(df["Part of speech"] == pos)][["Word", "Definition"]]
+    return dframe[(dframe["Part of speech"] == pos)][["Word", "Definition"]]
 
 
 if __name__ == "__main__":
-    config = Config()
-    complete_collection = source(config)
+    conf = Config()
+    collection = source_files(conf)
 
-    parts_of_speech = list_pos(complete_collection)
+    parts_of_speech = list_pos(collection)
