@@ -52,6 +52,7 @@ coverage.xml
 cover/
 
 # Jupyter Notebook
+*.ipynb
 .ipynb_checkpoints
 
 # IPython
