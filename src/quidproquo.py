@@ -9,12 +9,19 @@ import pathlib
 import pandas
 
 
+Word = tuple[str, str, str]
+
+
 class Config:
     """
     Collection of important variables such as source file locations
     """
 
-    root = pathlib.Path(__file__).parents[1]
+    # this is necessary because the REPL doesn't have access to __file__
+    try:
+        root = pathlib.Path(__file__).parents[1]
+    except NameError:
+        root = pathlib.Path("/home/henning/code/projects/quidproquo")
     inputs = root / "inputs"
     output = root / "output"
 
@@ -59,38 +66,56 @@ def list_pos(
 def filter_by_pos(
     dframe: pandas.DataFrame,
     pos: str,
-) -> list[tuple[str, str, str]]:
+) -> list[Word]:
     """
     Return a new DataFrame containing only the specified parts of speech.
     If a word has several meanings, this will split them into separate definitions,
     one for each part of speech.
     """
-    whole = dframe[(dframe["Part of speech"] == pos)][["Word", "Definition"]]
+    all_words = dframe[(dframe["Part of speech"] == pos)][["Word", "Definition"]]
+    words = []
     separator = ", "
     if separator not in pos:
-        return whole
+        for word, definition in all_words.itertuples(index=False):
+            words.append((word, pos, definition))
+        return words
     pos1, pos2 = pos.split(separator)
-    tuples = []
-    for tup in whole.itertuples(index=False):
-        if "\n" in tup[1]:
-            def1, def2 = tup[1].split("\n")
+    for word, definitions in all_words.itertuples(index=False):
+        if "\n" in definitions:
+            def1, def2 = definitions.split("\n")
             # cut leading numbers
             def1 = def1[3:]
             def2 = def2[3:]
         else:
-            def1 = tup[1]
-            def2 = tup[1]
-        tuples.append(
-            (tup[0], pos1, def1),
-        )
-        tuples.append(
-            (tup[0], pos2, def2),
-        )
-    return tuples
+            def1 = definitions
+            def2 = definitions
+        words.append((word, pos1, def1))
+        words.append((word, pos2, def2))
+    return words
 
 
-if __name__ == "__main__":
+def sort_by_pos(collection: list[Word]):
+    sorted_words = {}
+    for item in collection:
+        word, pos, definition = item
+        try:
+            sorted_words[pos].append((word, definition))
+        except KeyError:
+            sorted_words[pos] = [(word, definition)]
+    return sorted_words
+
+
+def main():
     conf = Config()
     collection = source_files(conf)
 
-    parts_of_speech = list_pos(collection)
+    pos_list = list_pos(collection)
+    unsorted_words = []
+    for pos in pos_list:
+        unsorted_words.extend(filter_by_pos(collection, pos))
+    sorted_words = sort_by_pos(unsorted_words)
+    return sorted_words
+
+
+if __name__ == "__main__":
+    complete = main()
