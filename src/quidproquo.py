@@ -5,11 +5,14 @@ Take an Excel spreadsheet full of vocabulary and turn it into a Kahoot Quiz
 """
 
 import pathlib
+import random
 
 import pandas
+from openpyxl import load_workbook
 
 
 Word = tuple[str, str, str]
+QuizItem = list[str]
 
 
 class Config:
@@ -41,7 +44,7 @@ class Config:
         )
 
 
-def source_files(config: Config) -> pandas.DataFrame:
+def import_sheets(config: Config) -> pandas.DataFrame:
     """
     Load files and analyse them
     """
@@ -105,10 +108,7 @@ def sort_by_pos(collection: list[Word]):
     return sorted_words
 
 
-def main():
-    conf = Config()
-    collection = source_files(conf)
-
+def arrange(collection):
     pos_list = list_pos(collection)
     unsorted_words = []
     for pos in pos_list:
@@ -117,5 +117,54 @@ def main():
     return sorted_words
 
 
+def choose_random_words(questions: int) -> list[QuizItem]:
+    quiz = []
+    for _ in range(0, questions):
+        pos = random.choice(list(wordlist.keys()))
+        right_answer, definition = random.choice(wordlist[pos])
+        wrong_answers = [
+            random.choice(wordlist[pos])[0],
+            random.choice(wordlist[pos])[0],
+            random.choice(wordlist[pos])[0],
+        ]
+        quiz.append(
+            [
+                definition,
+                right_answer,
+                *wrong_answers,
+                "20",
+                "1",
+            ]
+        )
+    return quiz
+
+
+def output(config, lines) -> None:
+    wb = load_workbook(config.root / "template.xlsx")
+    ws = wb.active
+    for i, item in enumerate(lines):
+        for j, item in enumerate(item):
+            ws.cell(row=i + 9, column=j + 2, value=item)
+
+    outfile = config.output / "kahoot.xlsx"
+    if not outfile.exists:
+        outfile.touch()
+    wb.save(outfile)
+
+
 if __name__ == "__main__":
-    complete = main()
+    random.seed()
+    conf = Config()
+    raw_data = import_sheets(conf)
+
+    wordlist = arrange(raw_data)
+
+    proportion = {}
+    for key in wordlist.keys():
+        proportion[key] = len(wordlist[key])
+
+    quiz = choose_random_words(30)
+    output(
+        conf,
+        quiz,
+    )
