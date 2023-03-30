@@ -50,16 +50,16 @@ class Config:
     def export(self, lines) -> None:
         """Check for outfile and write rows of formatted questions and
         answers to it"""
-        wb = load_workbook(self.root / "template.xlsx")
-        ws = wb.active
+        wbook = load_workbook(self.root / "template.xlsx")
+        wsheet = wbook.active
         for i, item in enumerate(lines):
             for j, item in enumerate(item):
-                ws.cell(row=i + 9, column=j + 2, value=item)
+                wsheet.cell(row=i + 9, column=j + 2, value=item)
 
         outfile = self.output / "kahoot.xlsx"
         if not outfile.exists:
             outfile.touch()
-        wb.save(outfile)
+        wbook.save(outfile)
 
 
 def import_sheets(config: Config) -> pandas.DataFrame:
