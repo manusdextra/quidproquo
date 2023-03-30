@@ -70,16 +70,6 @@ def import_sheets(config: Config) -> pandas.DataFrame:
     return pandas.concat(sheets)
 
 
-def list_pos(
-    dframe: pandas.DataFrame,
-) -> list[str]:
-    """
-    Make a list of parts of speech included in the set, sorted by Frequency,
-    optionally with duplicates ("noun, verb" and "verb, noun" for example) removed.
-    """
-    return list(dframe["Part of speech"].value_counts().index)
-
-
 def filter_by_pos(
     dframe: pandas.DataFrame,
     pos: str,
@@ -122,26 +112,34 @@ def sort_by_pos(collection: list[Word]):
     return sorted_words
 
 
-def arrange(collection):
-    pos_list = list_pos(collection)
+def arrange(dframe: pandas.DataFrame):
+    pos_list = list(dframe["Part of speech"].value_counts().index)
     unsorted_words = []
     for pos in pos_list:
-        unsorted_words.extend(filter_by_pos(collection, pos))
+        unsorted_words.extend(filter_by_pos(dframe, pos))
     sorted_words = sort_by_pos(unsorted_words)
     return sorted_words
 
 
-def choose_random_words(questions: int) -> list[QuizItem]:
-    quiz = []
-    for _ in range(0, questions):
-        pos = random.choice(list(wordlist.keys()))
-        right_answer, definition = random.choice(wordlist[pos])
+def find_proportions(wordlist) -> dict[str, int]:
+    """Find out which parts of speech appear most frequently
+    in the source material"""
+    return {pos: len(words) for pos, words in wordlist.items()}
+
+
+def choose_random_words(words: dict[str, Word], size: int) -> list[QuizItem]:
+    """For a randomly chosen part of speech, choose a definition, the right
+    word, and then three other words from that same category"""
+    questions = []
+    for _ in range(0, size):
+        pos = random.choice(list(words.keys()))
+        right_answer, definition = random.choice(words[pos])
         wrong_answers = [
-            random.choice(wordlist[pos])[0],
-            random.choice(wordlist[pos])[0],
-            random.choice(wordlist[pos])[0],
+            random.choice(words[pos])[0],
+            random.choice(words[pos])[0],
+            random.choice(words[pos])[0],
         ]
-        quiz.append(
+        questions.append(
             [
                 definition,
                 right_answer,
@@ -150,10 +148,12 @@ def choose_random_words(questions: int) -> list[QuizItem]:
                 "1",
             ]
         )
-    return quiz
+    return questions
 
 
 def output(config, lines) -> None:
+    """Check for outfile and write rows of formatted questions and
+    answers to it"""
     wb = load_workbook(config.root / "template.xlsx")
     ws = wb.active
     for i, item in enumerate(lines):
@@ -170,15 +170,12 @@ if __name__ == "__main__":
     random.seed()
     args = parse_args()
     conf = Config()
-    raw_data = import_sheets(conf)
 
-    wordlist = arrange(raw_data)
+    sorted_data = arrange(import_sheets(conf))
 
-    proportion = {}
-    for key in wordlist.keys():
-        proportion[key] = len(wordlist[key])
+    proportions = find_proportions(sorted_data)
 
-    quiz = choose_random_words(args.size)
+    quiz = choose_random_words(sorted_data, args.size)
     output(
         conf,
         quiz,
