@@ -105,23 +105,20 @@ def filter_by_pos(
     return words
 
 
-def sort_by_pos(collection: list[Word]):
+def arrange(dframe: pandas.DataFrame) -> dict[str, tuple[str, str]]:
+    """Create dictionary of words and definitions sorted by their
+    parts of speech"""
+    pos_list = list(dframe["Part of speech"].value_counts().index)
+    unsorted_words = []
+    for pos in pos_list:
+        unsorted_words.extend(filter_by_pos(dframe, pos))
     sorted_words = {}
-    for item in collection:
+    for item in unsorted_words:
         word, pos, definition = item
         try:
             sorted_words[pos].append((word, definition))
         except KeyError:
             sorted_words[pos] = [(word, definition)]
-    return sorted_words
-
-
-def arrange(dframe: pandas.DataFrame):
-    pos_list = list(dframe["Part of speech"].value_counts().index)
-    unsorted_words = []
-    for pos in pos_list:
-        unsorted_words.extend(filter_by_pos(dframe, pos))
-    sorted_words = sort_by_pos(unsorted_words)
     return sorted_words
 
 
