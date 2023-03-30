@@ -47,15 +47,19 @@ class Config:
         """load all input files into memory"""
         return [pandas.ExcelFile(file) for file in self.inputs.iterdir()]
 
-    @property
-    def template(self) -> pandas.DataFrame:
-        """provide kahoot template and select appropriate regions"""
-        return pandas.read_excel(
-            self.root / "template.xlsx",
-            engine="openpyxl",
-            skiprows=7,
-            index_col=0,
-        )
+    def export(self, lines) -> None:
+        """Check for outfile and write rows of formatted questions and
+        answers to it"""
+        wb = load_workbook(self.root / "template.xlsx")
+        ws = wb.active
+        for i, item in enumerate(lines):
+            for j, item in enumerate(item):
+                ws.cell(row=i + 9, column=j + 2, value=item)
+
+        outfile = self.output / "kahoot.xlsx"
+        if not outfile.exists:
+            outfile.touch()
+        wb.save(outfile)
 
 
 def import_sheets(config: Config) -> pandas.DataFrame:
@@ -151,21 +155,6 @@ def choose_random_words(words: dict[str, Word], size: int) -> list[QuizItem]:
     return questions
 
 
-def output(config, lines) -> None:
-    """Check for outfile and write rows of formatted questions and
-    answers to it"""
-    wb = load_workbook(config.root / "template.xlsx")
-    ws = wb.active
-    for i, item in enumerate(lines):
-        for j, item in enumerate(item):
-            ws.cell(row=i + 9, column=j + 2, value=item)
-
-    outfile = config.output / "kahoot.xlsx"
-    if not outfile.exists:
-        outfile.touch()
-    wb.save(outfile)
-
-
 if __name__ == "__main__":
     random.seed()
     args = parse_args()
@@ -176,7 +165,4 @@ if __name__ == "__main__":
     proportions = find_proportions(sorted_data)
 
     quiz = choose_random_words(sorted_data, args.size)
-    output(
-        conf,
-        quiz,
-    )
+    conf.export(quiz)
