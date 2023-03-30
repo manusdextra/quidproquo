@@ -4,15 +4,29 @@ Quid Pro Quo
 Take an Excel spreadsheet full of vocabulary and turn it into a Kahoot Quiz
 """
 
+import argparse
 import pathlib
 import random
 
-import pandas
 from openpyxl import load_workbook
+import pandas
 
 
 Word = tuple[str, str, str]
 QuizItem = list[str]
+
+
+def parse_args() -> argparse.Namespace:
+    """Get command line arguments"""
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-s",
+        "--size",
+        type=int,
+        help="How many questions in the quiz?",
+        default=30,
+    )
+    return parser.parse_args()
 
 
 class Config:
@@ -154,6 +168,7 @@ def output(config, lines) -> None:
 
 if __name__ == "__main__":
     random.seed()
+    args = parse_args()
     conf = Config()
     raw_data = import_sheets(conf)
 
@@ -163,7 +178,7 @@ if __name__ == "__main__":
     for key in wordlist.keys():
         proportion[key] = len(wordlist[key])
 
-    quiz = choose_random_words(30)
+    quiz = choose_random_words(args.size)
     output(
         conf,
         quiz,
