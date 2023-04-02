@@ -12,7 +12,7 @@ from openpyxl import load_workbook
 import pandas
 
 
-Word = tuple[str, str, str]
+Word = tuple[str, str]
 QuizItem = list[str]
 
 
@@ -71,6 +71,8 @@ def import_sheets(config: Config) -> pandas.DataFrame:
         pandas.read_excel(sourcefile, sheet_name=sheet_name, engine="openpyxl")
         for sheet_name in sourcefile.sheet_names
     ]
+    # TODO: What if this spreadsheet has three separate columns with names like
+    # "Standard Vocab", "Extended Vocab" etc, only one of which is actually used?
     return pandas.concat(sheets)
 
 
@@ -135,11 +137,19 @@ def choose_random_words(words: dict[str, Word], size: int) -> list[QuizItem]:
     for _ in range(0, size):
         pos = random.choice(list(words.keys()))
         right_answer, definition = random.choice(words[pos])
-        wrong_answers = [
-            random.choice(words[pos])[0],
-            random.choice(words[pos])[0],
-            random.choice(words[pos])[0],
-        ]
+        while len(definition) > 120:
+            right_answer, definition = random.choice(words[pos])
+        all_answers = []
+        while len(set(all_answers)) != 4:
+            all_answers = [right_answer]
+            all_answers.extend(
+                [
+                    random.choice(words[pos])[0],
+                    random.choice(words[pos])[0],
+                    random.choice(words[pos])[0],
+                ]
+            )
+        wrong_answers = all_answers[1:]
         questions.append(
             [
                 definition,
@@ -160,6 +170,10 @@ if __name__ == "__main__":
     sorted_data = arrange(import_sheets(conf))
 
     proportions = find_proportions(sorted_data)
+    # guard against overly small word lists
+    for pos, number in proportions.items():
+        if number < args.size:
+            del sorted_data[pos]
 
     quiz = choose_random_words(sorted_data, args.size)
     conf.export(quiz)
